@@ -1,0 +1,32 @@
+body 
+{
+    font-family: Sans-serif, Arial, Verdana; 
+    background: #ddd; 
+}
+
+#content
+{
+    background: #aaa;
+    
+    display: inline-block; 
+    text-align: left; 
+    padding: 1em; 
+    margin: 1em; 
+}
+
+#display-container
+{
+    background: #ddd; 
+    border: 3px double #333;
+    text-align: center; 
+    padding: 0.2em;
+    line-height: 0px; 
+}
+
+#display-container canvas
+{
+    background: #fff;
+    width: 400px; 
+    height: 300px; 
+    margin: 0px;
+}
