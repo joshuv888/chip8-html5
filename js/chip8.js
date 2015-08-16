@@ -1,7 +1,7 @@
 /* 
  * Author: Maxwell Aguiar Silva
  * E-mail: maxwellaguiarsilva@gmail.com
- * A Chip8 emulator written in javascript. 
+ * A Chip8 emulator written in javascript and HTML5! 
  * 
 */
 
@@ -9,6 +9,13 @@
 var DISPLAY_WIDTH = 0x40; // 64 pixels. 
 var DISPLAY_HEIGHT = 0x20; // 32 pixels. 
 var DISPLAY_ARRAY_SIZE = 0x0100; // 2048 bits. 
+
+var MEMORY_SIZE = 0x1000; // 4096 bytes. 
+var NUMBER_OF_REGISTERS = 0x10; // 16 registers, 16 bytes. 
+var STACK_SIZE = 0x10; // 16 bytes. 
+var PROGRAM_START_ADDRESS = 0x200; // Load ROM into RAM at address 512d ( 0x200 ). 
+var ROWS_PER_CHARACTER = 5; // 5 lines to draw a number into screen. 
+
 var NUM_BITS = 0x08; // 8 bits in a byte. 
 var BYTE_MASK = 0xFF; // 255 number as 8 bits mask. 
 
@@ -18,7 +25,7 @@ var Chip8 = ( function(  ){
     
     
     // Stores and manages the display data. 
-    var Display = ( function(  ){ 
+    var Display = ( function( chip8StdOut ){ 
         
         
         // Draw column data with the XOR operator. 
@@ -65,14 +72,31 @@ var Chip8 = ( function(  ){
             
         } ); 
         
-        // TODO: Render method, using userInterface. 
+        // Render the current data to the screen. 
+        this.render = ( function(  ){ 
+            
+            return chip8StdOut.render( data ); 
+            
+        } ); 
         
         
         var data = new Uint8Array( DISPLAY_ARRAY_SIZE ); // 2048 bits. 
+        var chip8StdOut = chip8StdOut; // Used to render the pixels on the screen. 
         
         
     } ); 
     
-    
+    // Central Processing Unit - Emulate the processor and the memory of chip8. 
+    var CPU = ( function(  ){ 
+        
+        
+        var memory = new Uint8Array( MEMORY_SIZE ); // RAM Memory with 4KB. 
+        var registers = new Uint8Array( NUMBER_OF_REGISTERS ); // 16 registers. 
+        var stack  = new Array( STACK_SIZE ); // 16 bits in each index. 
+        var stackPoint = 0; // Address of stack level. 
+        var delayTimer = 0; // Timer counter ( 60 Hz ). 
+        var soundTimer = 0; // Sound timer counter ( 60 Hz ). 
+        
+    } ); 
     
 } ); 
