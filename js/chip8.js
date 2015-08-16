@@ -65,13 +65,14 @@ var Chip8 = ( function(  ){
             
         } ); 
         
+        // TODO: Render method, using userInterface. 
+        
         
         var data = new Uint8Array( DISPLAY_ARRAY_SIZE ); // 2048 bits. 
         
         
     } ); 
     
-    // TODO: Render method, using frontEndInterface. 
     
     
 } ); 
