@@ -14,19 +14,44 @@ body
     margin: 1em; 
 }
 
-#display-container
+#display-container, #controls-container
 {
     background: #ddd; 
-    border: 3px double #333;
-    text-align: center; 
+    border: 2px solid #555;
     padding: 0.2em;
     line-height: 0px; 
+}
+
+#display-container 
+{
+    text-align: center; 
 }
 
 #display-container canvas
 {
     background: #fff;
-    width: 400px; 
+    width: 600px; 
     height: 300px; 
     margin: 0px;
+}
+
+#controls-container
+{
+    text-align: left; 
+}
+
+#controls-container button, #controls-container select 
+{
+    height: 30px; 
+    font-size: 18px; 
+}
+
+#controls-container button
+{
+    width: 100px; 
+}
+
+#controls-container select 
+{
+    width: 200px; 
 }
