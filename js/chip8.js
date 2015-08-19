@@ -20,6 +20,34 @@ var NUM_BITS = 0x08; // 8 bits in a byte.
 var BYTE_MASK = 0xFF; // 255 number as 8 bits mask. 
 
 
+// Listener Pattern
+var Listenable = ( function(  ){ 
+    
+    
+    var listeners = new Array(  ); // Listeners Set. 
+    
+    // Add a listener. 
+    this.addListener = ( function( listener ){ 
+        
+        listeners.push( listener ); 
+        
+    } ); 
+    
+    // Dispatch an event for all listeners. 
+    this.notify = ( function(  ){ 
+        
+        var eventName = arguments[ 0 ]; 
+        var args = Array.prototype.slice.call( arguments, 1 ); 
+        
+        for( var listCount = 0; listCount < listeners.length; listCount++ )
+            if( typeof listeners[ listCount ][ eventName ] == 'function' )
+                listeners[ listCount ][ eventName ]( args ); 
+    } ); 
+    
+    
+} ); 
+
+
 // Chip8 emulator. 
 var Chip8 = ( function(  ){ 
     
@@ -32,27 +60,26 @@ var Chip8 = ( function(  ){
         this.draw = ( function( data, left, top ){ 
             
             var flag = false; 
+            var firstByteIndex, secondByteIndex, firstByteFilter, secondByteFilter, scroll; 
+            var dataWord, filterWord; 
             var count; 
             
             for( count = 0; count < data.length; count++ ) // column height
             { 
-                var byteOneIndex = Math.floor( ( ( /* column height */ top + count ) * DISPLAY_WIDTH + left ) / NUM_BITS ) % data.length; 
-                var byteTwoIndex = ( byteOneIndex + 1 ) % data.length; 
+                firstByteIndex = Math.floor( ( ( /* column height */ top + count ) * DISPLAY_WIDTH + left ) / NUM_BITS ) % data.length; 
+                secondByteIndex = ( firstByteIndex + 1 ) % data.length; 
                 
-                var scroll = ( left % NUM_BITS ); 
-                var byteOneFilter = data[ count ] >> scroll; 
-                var byteTwoFilter = ( data[ count ] << ( NUM_BITS - scroll ) ) & BYTE_MASK; 
+                scroll = ( left % NUM_BITS ); 
+                firstByteFilter = data[ count ] >> scroll; 
+                secondByteFilter = ( data[ count ] << ( NUM_BITS - scroll ) ) & BYTE_MASK; 
                 
-                data[ byteOneIndex ] ^= byteOneFilter; 
-                data[ byteTwoIndex ] ^= byteTwoFilter; 
+                data[ firstByteIndex  ] ^= firstByteFilter; 
+                data[ secondByteIndex ] ^= secondByteFilter; 
                 
                 // Set the flag if any screen pixels are flipped from 1 to 0 ( 1 XOR 1 = 0 ). 
-                if( (
-                        ( data[ byteOneIndex ] |  ( data[ byteTwoIndex ] << NUM_BITS ) ) & 
-                        ( byteOneFilter | ( byteTwoFilter << NUM_BITS ) ) 
-                    ) != 
-                    ( byteOneFilter | ( byteTwoFilter << NUM_BITS ) ) 
-                ) 
+                dataWord = ( data[ firstByteIndex ] |  ( data[ secondByteIndex ] << NUM_BITS ) ); 
+                filterWord = ( firstByteFilter | ( secondByteFilter << NUM_BITS ) ); 
+                if( ( dataWord & filterWord ) != filterWord ) 
                     flag = true; 
             } 
             
@@ -96,6 +123,26 @@ var Chip8 = ( function(  ){
         var stackPoint = 0; // Address of stack level. 
         var delayTimer = 0; // Timer counter ( 60 Hz ). 
         var soundTimer = 0; // Sound timer counter ( 60 Hz ). 
+        
+        // Hexadecimal characters loaded into memory. 
+        var CHARACTERS = [
+            0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+            0x20, 0x60, 0x20, 0x20, 0x70, // 1
+            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+            0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+            0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+            0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+            0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+            0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+            0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+        ]; 
         
     } ); 
     
