@@ -20,11 +20,9 @@ var NUM_BITS = 0x08; // 8 bits in a byte.
 var BYTE_MASK = 0xFF; // 255 number as 8 bits mask. 
 
 
-// Listener Pattern
+// Listener pattern
 var Listenable = ( function(  ){ 
     
-    
-    var listeners = new Array(  ); // Listeners Set. 
     
     // Add a listener. 
     this.addListener = ( function( listener ){ 
@@ -34,15 +32,18 @@ var Listenable = ( function(  ){
     } ); 
     
     // Dispatch an event for all listeners. 
-    this.notify = ( function(  ){ 
+    this.notify = ( function( eventName ){ 
         
-        var eventName = arguments[ 0 ]; 
-        var args = Array.prototype.slice.call( arguments, 1 ); 
+        var args = Array.prototype.slice.call( arguments, 1 ), count; 
         
-        for( var listCount = 0; listCount < listeners.length; listCount++ )
-            if( typeof listeners[ listCount ][ eventName ] == 'function' )
-                listeners[ listCount ][ eventName ]( args ); 
+        for( count = 0; count < listeners.length; count++ ) 
+            if( typeof listeners[ count ][ eventName ] == 'function' ) 
+                listeners[ count ][ eventName ].apply( null, args ); 
+        
     } ); 
+    
+    
+    var listeners = new Array(  ); // Listeners set. 
     
     
 } ); 
