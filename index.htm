@@ -1,7 +1,13 @@
 <!DOCTYPE HTML>
 <html lang="en">
     <head>
-        <meta charset="utf-8">
+        
+        <meta name="author" content="Maxwell Aguiar Silva">
+        <meta name="description" content="Chip8-HTML5 - A Chip8 emulator written in javascript and HTML5!">
+        <meta name="keywords" content="chip8, emulator, html5, javascript, game, games">
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <meta name="reply-to" content="maxwellaguiarsilva@gmail.com">
+        
         <title>Chip8-HTML5</title>
         
         <style type="text/css">
@@ -11,7 +17,6 @@
     </head>
     <body>
         
-        <center>
         <div id="content">
             <h1 id="application-name">Chip8-HTML5</h1>
             <h2 id="application-description">A Chip8 emulator written in javascript and HTML5!</h2>
@@ -20,15 +25,13 @@
                     --><canvas id="display-canvas">Your browser doesn't support &lt;canvas&gt;&lt;/canvas&gt; tag!</canvas><!--
                 --></div>
                 <div id="controls-container">
-                    <button id="load-button">Load</button>
-                    <select id="roms-list">
-                        
-                    </select>
-                    
+                    <button id="reset-button">Reset</button>
+                    <button id="toggle-run-button" disabled>Pause</button>
+                    <label>ROM: <select id="roms-list"></select></label>
+                    <label>Turbo: <input id="turbo-checkbox" type="checkbox" /></label>
                 </div>
             </div>
         </div>
-        </center>
         
     </body>
 </html>
