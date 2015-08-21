@@ -1,7 +1,9 @@
 body 
 {
     font-family: Sans-serif, Arial, Verdana; 
+    font-weight: bolder; 
     background: #ddd; 
+    text-align: center; 
 }
 
 #content
@@ -17,7 +19,7 @@ body
 #display-container, #controls-container
 {
     background: #ddd; 
-    border: 2px solid #555;
+    border: 1px solid #555; 
     padding: 0.2em;
     line-height: 0px; 
 }
