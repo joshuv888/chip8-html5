@@ -48,13 +48,12 @@ var Listenable = ( function(  ){
     
 } ); 
 
-
 // Chip8 emulator. 
 var Chip8 = ( function(  ){ 
     
     
     // Stores and manages the display data. 
-    var Display = ( function( chip8StdOut ){ 
+    var Display = ( function(  ){ 
         
         
         // Draw column data with the XOR operator. 
@@ -100,22 +99,24 @@ var Chip8 = ( function(  ){
             
         } ); 
         
-        // Render the current data to the screen. 
-        this.render = ( function(  ){ 
+        // Get data used to render the screen. 
+        this.getData = ( function(  ){ 
             
-            return chip8StdOut.render( data ); 
+            return data.slice(  ); 
             
         } ); 
         
         
         var data = new Uint8Array( DISPLAY_ARRAY_SIZE ); // 2048 bits. 
-        var chip8StdOut = chip8StdOut; // Used to render the pixels on the screen. 
         
         
     } ); 
     
     // Central Processing Unit - Emulate the processor and the memory of chip8. 
-    var CPU = ( function(  ){ 
+    var CPU = ( function( chip8Interface ){ 
+        
+        
+        // TODO: "reset" and "cycle" functions of CPU class. 
         
         
         var memory = new Uint8Array( MEMORY_SIZE ); // RAM Memory with 4KB. 
@@ -145,6 +146,17 @@ var Chip8 = ( function(  ){
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F
         ]; 
         
+        
+        var chip8Interface = chip8Interface; // Used as input and output. 
+        
+        
     } ); 
+    
+    
+    var listenable = new Listenable(  ); // Dispatch chip8 events for all listeners. 
+    
+    var display = new Display(  ); 
+    // TODO: var cpu = new CPU( chip8Interface ); // CPU of chip8. 
+    
     
 } ); 
