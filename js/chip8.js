@@ -48,8 +48,9 @@ var Listenable = ( function(  ){
     
 } ); 
 
+
 // Chip8 emulator. 
-var Chip8 = ( function(  ){ 
+var Chip8 = ( function( guiInterface ){ 
     
     
     // Stores and manages the display data. 
@@ -102,7 +103,8 @@ var Chip8 = ( function(  ){
         // Get data used to render the screen. 
         this.getData = ( function(  ){ 
             
-            return data.slice(  ); 
+            // JavaScript does not have a native read-only list interface ( and "splice" is slow to do this ). 
+            return data; 
             
         } ); 
         
@@ -127,23 +129,23 @@ var Chip8 = ( function(  ){
         var soundTimer = 0; // Sound timer counter ( 60 Hz ). 
         
         // Hexadecimal characters loaded into memory. 
-        var CHARACTERS = [
-            0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
-            0x20, 0x60, 0x20, 0x20, 0x70, // 1
-            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
-            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
-            0x90, 0x90, 0xF0, 0x10, 0x10, // 4
-            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
-            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
-            0xF0, 0x10, 0x20, 0x40, 0x40, // 7
-            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
-            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
-            0xF0, 0x90, 0xF0, 0x90, 0x90, // A
-            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-            0xF0, 0x80, 0x80, 0x80, 0xF0, // C
-            0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
-            0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+        var CHARACTERS = [  
+            0xF0, 0x90, 0x90, 0x90, 0xF0, // 0 #### ..#. #### #### #..# #### #### #### 
+            0x20, 0x60, 0x20, 0x20, 0x70, // 1 #..# .##. ...# ...# #..# #... #... ...# 
+            0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2 #..# ..#. #### #### #### #### #### ..#. 
+            0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3 #..# ..#. #... ...# ...# ...# #..# .#.. 
+            0x90, 0x90, 0xF0, 0x10, 0x10, // 4 #### .### #### #### ...# #### #### .#.. 
+            0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5 
+            0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6 #### #### #### ###. #### ###. #### #### 
+            0xF0, 0x10, 0x20, 0x40, 0x40, // 7 #..# #..# #..# #..# #... #..# #... #... 
+            0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8 #### #### #### ###. #... #..# #### #### 
+            0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9 #..# ...# #..# #..# #... #..# #... #... 
+            0xF0, 0x90, 0xF0, 0x90, 0x90, // A #### #### #..# ###. #### ###. #### #... 
+            0xE0, 0x90, 0xE0, 0x90, 0xE0, // B 
+            0xF0, 0x80, 0x80, 0x80, 0xF0, // C 
+            0xE0, 0x90, 0x90, 0x90, 0xE0, // D 
+            0xF0, 0x80, 0xF0, 0x80, 0xF0, // E 
+            0xF0, 0x80, 0xF0, 0x80, 0x80  // F 
         ]; 
         
         
@@ -152,11 +154,26 @@ var Chip8 = ( function(  ){
         
     } ); 
     
+    // Private chip8 interface. 
+    var chip8Interface = ( { 
+        // TODO: waitKey, isKeyPressed. 
+    } ); 
+    
+    
+    // Frame loop of emulator. 
+    var frame = ( function(  ){ 
+        
+        // TODO: 
+        
+    } ); 
+    
+    var guiInterface = guiInterface; // Graphical User Interface. 
     
     var listenable = new Listenable(  ); // Dispatch chip8 events for all listeners. 
     
     var display = new Display(  ); 
-    // TODO: var cpu = new CPU( chip8Interface ); // CPU of chip8. 
+    var cpu = new CPU( chip8Interface ); // CPU of chip8. 
+    var running = false; // True if game is running. 
     
     
 } ); 
