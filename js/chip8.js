@@ -118,15 +118,54 @@ var Chip8 = ( function( guiInterface ){
     var CPU = ( function( chip8Interface ){ 
         
         
-        // TODO: "reset" and "cycle" functions of CPU class. 
+        /*
+            TODO: 
+                "reset" Reset the CPU state and data. 
+                "cycle" Emulate the cycle of CPU. 
+                "load"  Load the ROM into memory. 
+                ROGRAM_COUNTER_STARTS = 0x200; // 512. 
+                CHARACTER_SIZE = 0x05; // Height in pixels of each character. 
+        */
+        
+        // Reset the CPU state and data. 
+        this.reset = ( function(  ){ 
+            
+            var count = 0; 
+            
+            // Reset the memory RAM. 
+            for( count = 0; count < CHARACTERS.length; count++ ) 
+                memory[ count ] = CHARACTERS[ count ]; 
+            // TODO: Load ROM instead zero into memory. 
+            // for( count = CHARACTERS.length; count < MEMORY_SIZE; count++ ) 
+            //    memory[ count ] = 0; 
+            
+            // Reset registers. 
+            for( count = 0; count < NUMBER_OF_REGISTERS; count++ ) // register vector. 
+                registers[ count ] = 0; 
+            programCounter = 0; 
+            address = 0; 
+            
+            // Reset the stack and stack register. 
+            stackPointer = 0; 
+            for( count = 0; count < STACK_SIZE; count++ ) 
+                stack[ count ] = 0; 
+            
+            // Reset timers. 
+            delayTimer = 0; 
+            soundTimer = 0; 
+            
+            
+        } ); 
         
         
         var memory = new Uint8Array( MEMORY_SIZE ); // RAM Memory with 4KB. 
         var registers = new Uint8Array( NUMBER_OF_REGISTERS ); // 16 registers. 
-        var stack  = new Array( STACK_SIZE ); // 16 bits in each index. 
-        var stackPoint = 0; // Address of stack level. 
+        var stack  = new Array( STACK_SIZE ); // 16 bits in each index ( https://en.wikipedia.org/wiki/Call_stack ). 
+        var stackPointer = 0; // Address of stack level ( https://en.wikipedia.org/wiki/Stack_register ). 
+        var programCounter = 0; // Instruction counter ( https://en.wikipedia.org/wiki/Program_counter ). 
         var delayTimer = 0; // Timer counter ( 60 Hz ). 
         var soundTimer = 0; // Sound timer counter ( 60 Hz ). 
+        var address = 0; // The address ( I ) register. 
         
         // Hexadecimal characters loaded into memory. 
         var CHARACTERS = [  
@@ -148,6 +187,8 @@ var Chip8 = ( function( guiInterface ){
             0xF0, 0x80, 0xF0, 0x80, 0x80  // F 
         ]; 
         
+        // Current ROM loaded. 
+        var romdata = [  ]; 
         
         var chip8Interface = chip8Interface; // Used as input and output. 
         
