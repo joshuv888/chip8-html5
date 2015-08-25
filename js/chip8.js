@@ -12,9 +12,9 @@ var DISPLAY_ARRAY_SIZE = 0x0100; // 2048 bits.
 
 var MEMORY_SIZE = 0x1000; // 4096 bytes. 
 var NUMBER_OF_REGISTERS = 0x10; // 16 registers, 16 bytes. 
-var STACK_SIZE = 0x10; // 16 bytes. 
-var PROGRAM_START_ADDRESS = 0x200; // Load ROM into RAM at address 512d ( 0x200 ). 
-var ROWS_PER_CHARACTER = 5; // 5 lines to draw a number into screen. 
+var STACK_SIZE = 0x10; // 16 address ( two bytes for each address ). 
+var STARTING_ADDRESS = 0x200; // Load ROM into RAM at address 512d ( 0x200 ). 
+var CHARACTER_HEIGHT = 5; // 5 lines to draw a number into screen. 
 
 var NUM_BITS = 0x08; // 8 bits in a byte. 
 var BYTE_MASK = 0xFF; // 255 number as 8 bits mask. 
@@ -120,11 +120,8 @@ var Chip8 = ( function( guiInterface ){
         
         /*
             TODO: 
-                "reset" Reset the CPU state and data. 
                 "cycle" Emulate the cycle of CPU. 
                 "load"  Load the ROM into memory. 
-                ROGRAM_COUNTER_STARTS = 0x200; // 512. 
-                CHARACTER_SIZE = 0x05; // Height in pixels of each character. 
         */
         
         // Reset the CPU state and data. 
@@ -133,16 +130,26 @@ var Chip8 = ( function( guiInterface ){
             var count = 0; 
             
             // Reset the memory RAM. 
-            for( count = 0; count < CHARACTERS.length; count++ ) 
-                memory[ count ] = CHARACTERS[ count ]; 
-            // TODO: Load ROM instead zero into memory. 
-            // for( count = CHARACTERS.length; count < MEMORY_SIZE; count++ ) 
-            //    memory[ count ] = 0; 
+            {
+                // CHARACTERS FONT. 
+                for( count = 0; count < CHARACTERS.length; count++ ) 
+                    memory[ count ] = CHARACTERS[ count ]; 
+                // Empty. 
+                for( ; count < STARTING_ADDRESS; count++ ) 
+                    memory[ count ] = 0; 
+                // ROM. 
+                var END_ROM_ADDRESS = STARTING_ADDRESS + romdata.length; // Calculate out of the loop. 
+                for( ; count < END_ROM_ADDRESS; count++ ) 
+                    memory[ count ] = romdata[ count ]; 
+                // Empty. 
+                for( ; count < memory.length; count++ ) 
+                    memory[ count ] = 0; 
+            }
             
             // Reset registers. 
             for( count = 0; count < NUMBER_OF_REGISTERS; count++ ) // register vector. 
                 registers[ count ] = 0; 
-            programCounter = 0; 
+            programCounter = STARTING_ADDRESS; 
             address = 0; 
             
             // Reset the stack and stack register. 
