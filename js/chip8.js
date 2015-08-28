@@ -12,7 +12,7 @@ var DISPLAY_ARRAY_SIZE = 0x0100; // 2048 bits.
 
 var MEMORY_SIZE = 0x1000; // 4096 bytes. 
 var NUMBER_OF_REGISTERS = 0x10; // 16 registers, 16 bytes. 
-var STACK_SIZE = 0x10; // 16 address ( two bytes for each address ). 
+var STACK_SIZE = 0x10; // 16 ( two bytes for each address ). 
 var STARTING_ADDRESS = 0x200; // Load ROM into RAM at address 512d ( 0x200 ). 
 var CHARACTER_HEIGHT = 5; // 5 lines to draw a number into screen. 
 
@@ -61,25 +61,27 @@ var Chip8 = ( function( guiInterface ){
         this.draw = ( function( data, left, top ){ 
             
             var flag = false; 
-            var firstByteIndex, secondByteIndex, firstByteFilter, secondByteFilter, scroll; 
+            var highByteIndex, lowerByteIndex, highByteFilter, lowerByteFilter, scroll; 
             var dataWord, filterWord; 
             var count; 
             
             for( count = 0; count < data.length; count++ ) // column height
             { 
-                firstByteIndex = Math.floor( ( ( /* column height */ top + count ) * DISPLAY_WIDTH + left ) / NUM_BITS ) % data.length; 
-                secondByteIndex = ( firstByteIndex + 1 ) % data.length; 
                 
                 scroll = ( left % NUM_BITS ); 
-                firstByteFilter = data[ count ] >> scroll; 
-                secondByteFilter = ( data[ count ] << ( NUM_BITS - scroll ) ) & BYTE_MASK; 
                 
-                data[ firstByteIndex  ] ^= firstByteFilter; 
-                data[ secondByteIndex ] ^= secondByteFilter; 
+                highByteIndex = Math.floor( ( ( /* column height */ top + count ) * DISPLAY_WIDTH + left ) / NUM_BITS ) % data.length; 
+                highByteFilter = data[ count ] >> scroll; 
+                data[ highByteIndex  ] ^= highByteFilter; 
+                
+                lowerByteFilter = ( data[ count ] << ( NUM_BITS - scroll ) ) & BYTE_MASK; 
+                lowerByteIndex = ( highByteIndex + 1 ) % data.length; 
+                data[ lowerByteIndex ] ^= lowerByteFilter; 
                 
                 // Set the flag if any screen pixels are flipped from 1 to 0 ( 1 XOR 1 = 0 ). 
-                dataWord = ( data[ firstByteIndex ] |  ( data[ secondByteIndex ] << NUM_BITS ) ); 
-                filterWord = ( firstByteFilter | ( secondByteFilter << NUM_BITS ) ); 
+                dataWord = toWord( data[ highByteIndex ], data[ lowerByteIndex ] ); 
+                filterWord = toWord( highByteFilter, lowerByteFilter ); 
+                
                 if( ( dataWord & filterWord ) != filterWord ) 
                     flag = true; 
             } 
@@ -109,6 +111,14 @@ var Chip8 = ( function( guiInterface ){
         } ); 
         
         
+        // Make a word number width two bytes. 
+        var toWord = ( function( highByte, lowerByte){ 
+            
+            return ( highByte << NUM_BITS ) | ( lowerByte & BYTE_MASK ); 
+            
+        } ); 
+        
+        
         var data = new Uint8Array( DISPLAY_ARRAY_SIZE ); // 2048 bits. 
         
         
@@ -117,12 +127,6 @@ var Chip8 = ( function( guiInterface ){
     // Central Processing Unit - Emulate the processor and the memory of chip8. 
     var CPU = ( function( chip8Interface ){ 
         
-        
-        /*
-            TODO: 
-                "cycle" Emulate the cycle of CPU. 
-                "load"  Load the ROM into memory. 
-        */
         
         // Reset the CPU state and data. 
         this.reset = ( function(  ){ 
@@ -149,7 +153,7 @@ var Chip8 = ( function( guiInterface ){
             // Reset registers. 
             for( count = 0; count < NUMBER_OF_REGISTERS; count++ ) // register vector. 
                 registers[ count ] = 0; 
-            programCounter = STARTING_ADDRESS; 
+            programCounter = STARTING_ADDRESS; // Starting in address 0x200. 
             address = 0; 
             
             // Reset the stack and stack register. 
@@ -161,6 +165,20 @@ var Chip8 = ( function( guiInterface ){
             delayTimer = 0; 
             soundTimer = 0; 
             
+            
+        } ); 
+        
+        // Emulate the cycle of CPU. 
+        this.cycle = ( function(  ){ 
+            
+            // TODO
+            
+        } ); 
+        
+        // Load the ROM into memory. 
+        this.load = ( function( data ){ 
+            
+            romdata = data.slice(  ); // "slice" used to copy the array. 
             
         } ); 
         
@@ -214,6 +232,7 @@ var Chip8 = ( function( guiInterface ){
         // TODO: 
         
     } ); 
+    
     
     var guiInterface = guiInterface; // Graphical User Interface. 
     
