@@ -110,8 +110,7 @@ var Chip8 = ( function( guiInterface ){
             
         } ); 
         
-        
-        // Make a word number width two bytes. 
+        // Make a word number. 
         var toWord = ( function( highByte, lowerByte){ 
             
             return ( highByte << NUM_BITS ) | ( lowerByte & BYTE_MASK ); 
