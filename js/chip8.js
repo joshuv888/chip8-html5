@@ -211,7 +211,7 @@ var Chip8 = ( function( guiInterface ){
             */
             
             var opcode = byteToWord( memory[ pc_register++ ], memory[ pc_register++ ] ); // Gets current instruction. 
-            var first_op = ( opcode & 0x0F00 ) >> 0x08; // Gets second hexadecimal digit. 
+            var first_op = ( opcode & 0x0F00 ) >> 0x08; // Gets first hexadecimal digit. 
             var x_op = ( opcode & 0x0F00 ) >> 0x08; // Gets second hexadecimal digit. 
             var y_op = ( opcode & 0x00F0 ) >> 0x04; // Gets third hexadecimal digit. 
             var last_op = ( opcode & 0x000F ); // Gets four hexadecimal digit. 
