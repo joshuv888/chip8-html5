@@ -16,13 +16,13 @@ var STACK_SIZE = 0x10; // 16 ( two bytes for each address ).
 var STARTING_ADDRESS = 0x200; // Load ROM into RAM at address 512d ( 0x200 ). 
 var CHARACTER_HEIGHT = 5; // 5 lines to draw a number into screen. 
 
-var NUM_BITS = 0x08; // 8 bits in a byte. 
+var BYTE_BITS = 0x08; // 8 bits in a byte. 
 var BYTE_MASK = 0xFF; // 255 number as 8 bits mask. 
 
 // Make a word number. 
-var toWord = ( function( highByte, lowerByte){ 
+var byteToWord = ( function( highByte, lowerByte){ 
     
-    return ( highByte << NUM_BITS ) | ( lowerByte & BYTE_MASK ); 
+    return ( highByte << BYTE_BITS ) | ( lowerByte & BYTE_MASK ); 
     
 } ); 
 
@@ -74,19 +74,19 @@ var Chip8 = ( function( guiInterface ){
             for( count = 0; count < data.length; count++ ) // column height
             { 
                 
-                scroll = ( left % NUM_BITS ); 
+                scroll = ( left % BYTE_BITS ); 
                 
-                highByteIndex = Math.floor( ( ( /* column height */ top + count ) * DISPLAY_WIDTH + left ) / NUM_BITS ) % data.length; 
+                highByteIndex = Math.floor( ( ( /* column height */ top + count ) * DISPLAY_WIDTH + left ) / BYTE_BITS ) % data.length; 
                 highByteFilter = data[ count ] >> scroll; 
                 data[ highByteIndex  ] ^= highByteFilter; 
                 
-                lowerByteFilter = ( data[ count ] << ( NUM_BITS - scroll ) ) & BYTE_MASK; 
+                lowerByteFilter = ( data[ count ] << ( BYTE_BITS - scroll ) ) & BYTE_MASK; 
                 lowerByteIndex = ( highByteIndex + 1 ) % data.length; 
                 data[ lowerByteIndex ] ^= lowerByteFilter; 
                 
                 // Set the flag if any screen pixels are flipped from 1 to 0 ( 1 XOR 1 = 0 ). 
-                dataWord = toWord( data[ highByteIndex ], data[ lowerByteIndex ] ); 
-                filterWord = toWord( highByteFilter, lowerByteFilter ); 
+                dataWord = byteToWord( data[ highByteIndex ], data[ lowerByteIndex ] ); 
+                filterWord = byteToWord( highByteFilter, lowerByteFilter ); 
                 
                 if( ( dataWord & filterWord ) != filterWord ) 
                     flag = true; 
@@ -151,11 +151,11 @@ var Chip8 = ( function( guiInterface ){
             // Reset registers. 
             for( count = 0; count < NUMBER_OF_REGISTERS; count++ ) // register vector. 
                 registers[ count ] = 0; 
-            programCounter = STARTING_ADDRESS; // Starting in address 0x200. 
-            address = 0; 
+            pc_register = STARTING_ADDRESS; // Starting in address 0x200. 
+            i_register = 0; 
             
             // Reset the stack and stack register. 
-            stackPointer = 0; 
+            sp_register = 0; 
             for( count = 0; count < STACK_SIZE; count++ ) 
                 stack[ count ] = 0; 
             
@@ -210,11 +210,17 @@ var Chip8 = ( function( guiInterface ){
                 
             */
             
-            var opcode = toWord( memory[ programCounter++ ], memory[ programCounter++ ] ); // Gets current instruction. 
-            var x_op = ( opcode & 0x0F00 ) >> 8; // Gets third hexadecimal digit. 
-            var y_op = ( opcode & 0x00F0 ) >> 4; // Gets second hexadecimal digit. 
-            var value_op = ( opcode & BYTE_MASK ); // Gets lower byte of "opcode". 
+            var opcode = byteToWord( memory[ pc_register++ ], memory[ pc_register++ ] ); // Gets current instruction. 
+            var first_op = ( opcode & 0x0F00 ) >> 0x08; // Gets second hexadecimal digit. 
+            var x_op = ( opcode & 0x0F00 ) >> 0x08; // Gets second hexadecimal digit. 
+            var y_op = ( opcode & 0x00F0 ) >> 0x04; // Gets third hexadecimal digit. 
+            var last_op = ( opcode & 0x000F ); // Gets four hexadecimal digit. 
+            var value_op = ( opcode & 0x00FF ); // Gets lower byte of "opcode". 
             var address_op = ( opcode & 0x0FFF ); // Get a 12-bit value used as the memory address. 
+            
+            var target, result, operator, value_one, value_two; // Used to run the instruction. 
+            
+            var base = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Base 64 decode. 
             
             
         } ); 
@@ -230,11 +236,11 @@ var Chip8 = ( function( guiInterface ){
         var memory = new Uint8Array( MEMORY_SIZE ); // RAM Memory with 4KB. 
         var registers = new Uint8Array( NUMBER_OF_REGISTERS ); // 16 registers. 
         var stack  = new Array( STACK_SIZE ); // 16 bits in each index ( https://en.wikipedia.org/wiki/Call_stack ). 
-        var stackPointer = 0; // Address of stack level ( https://en.wikipedia.org/wiki/Stack_register ). 
-        var programCounter = 0; // Instruction counter ( https://en.wikipedia.org/wiki/Program_counter ). 
+        var sp_register = 0; // Address of stack level ( https://en.wikipedia.org/wiki/Stack_register ). 
+        var pc_register = 0; // Instruction counter ( https://en.wikipedia.org/wiki/Program_counter ). 
+        var i_register = 0; // The I register. 
         var delayTimer = 0; // Timer counter ( 60 Hz ). 
         var soundTimer = 0; // Sound timer counter ( 60 Hz ). 
-        var address = 0; // The address ( I ) register. 
         
         // Hexadecimal characters loaded into memory. 
         var CHARACTERS = [  
