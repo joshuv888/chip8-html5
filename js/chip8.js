@@ -16,25 +16,27 @@ var STACK_SIZE = 0x10; // 16 ( two bytes for each address ).
 var STARTING_ADDRESS = 0x200; // Load ROM into RAM at address 512d ( 0x200 ). 
 var CHARACTER_HEIGHT = 5; // 5 lines to draw a number into screen. 
 
-var BYTE_BITS = 0x08; // 8 bits in a byte. 
-var BYTE_MASK = 0xFF; // 255 number as 8 bits mask. 
-var R0x4_BITS = 0x04; // 4 bits in two hexadecimal digits. 
-var R0x8_BITS = 0x08; // 8 bits in a hexadecimal digit. 
-var R0xC_BITS = 0x0C; // 12 bits in a hexadecimal digit. 
-var MASK_FL = 0xF00F; // First and Last. 
-var MASK_FV = 0xF0FF; // First and Value. 
-var MASK_V = 0x00FF; // Value mask. 
-var MASK_A = 0x0FFF; // Address mask. 
-var MASK_ALL = 0xFFFF; // All digits mask. 
+var BITS_BYTE = 0x08; // 08 bits in a byte. 
+var MASK_BYTE = 0xFF; // 255 number as 8 bits mask. 
+var R0x4_BITS = 0x04; // 04 bits in a hexadecimal digits. 
+var R0x8_BITS = 0x08; // 08 bits in two hexadecimal digit. 
+var R0xC_BITS = 0x0C; // 12 bits in tree hexadecimal digit. 
+
 var MASK_F = 0xF000; // Only first. 
 var MASK_S = 0x0F00; // Only second. 
 var MASK_T = 0x00F0; // Only third. 
 var MASK_L = 0x000F; // Only last. 
+var MASK_V = 0x00FF; // Value mask. 
+var MASK_A = 0x0FFF; // Address mask. 
+var MASK_W = 0xFFFF; // All digits mask ( word value ). 
+var MASK_FL = 0xF00F; // First and last. 
+var MASK_FV = 0xF0FF; // First and value. 
+
 
 // Make a word number. 
 var byteToWord = ( function( highByte, lowerByte){ 
     
-    return ( highByte << BYTE_BITS ) | ( lowerByte & BYTE_MASK ); 
+    return ( highByte << BITS_BYTE ) | ( lowerByte & MASK_BYTE ); 
     
 } ); 
 
@@ -86,13 +88,13 @@ var Chip8 = ( function( guiInterface ){
             for( count = 0; count < data.length; count++ ) // column height
             { 
                 
-                scroll = ( left % BYTE_BITS ); 
+                scroll = ( left % BITS_BYTE ); 
                 
-                highByteIndex = Math.floor( ( ( /* column height */ top + count ) * DISPLAY_WIDTH + left ) / BYTE_BITS ) % data.length; 
+                highByteIndex = Math.floor( ( ( /* column height */ top + count ) * DISPLAY_WIDTH + left ) / BITS_BYTE ) % data.length; 
                 highByteFilter = data[ count ] >> scroll; 
                 data[ highByteIndex  ] ^= highByteFilter; 
                 
-                lowerByteFilter = ( data[ count ] << ( BYTE_BITS - scroll ) ) & BYTE_MASK; 
+                lowerByteFilter = ( data[ count ] << ( BITS_BYTE - scroll ) ) & MASK_BYTE; 
                 lowerByteIndex = ( highByteIndex + 1 ) % data.length; 
                 data[ lowerByteIndex ] ^= lowerByteFilter; 
                 
@@ -193,7 +195,8 @@ var Chip8 = ( function( guiInterface ){
             
             // var base = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Base 64 decode. 
             
-            instruction = FIRST_FILTER[ f_op ][ opcode & FIRST_FILTER[ f_op ][ 'MASK' ] ]; 
+            instruction = INSTRUCTION_NUMBER.indexOf( opcode & INSTRUCTION_MASK[ f_op ] ); 
+            
             
             
         } ); 
@@ -236,47 +239,49 @@ var Chip8 = ( function( guiInterface ){
         ]; 
         
         // Instruction identifiers. 
-        var N___ = ( { 'MASK': MASK_F } ); 
-        var N__N = ( { 'MASK': MASK_FL } ); 
-        var N_NN = ( { 'MASK': MASK_FV } ); 
-        var NNNN = ( { 'MASK': MASK_ALL } ); 
+        var N___ = MASK_F; // Only first. 
+        var N__N = MASK_FL; // First and last. 
+        var N_NN = MASK_FV; // First and value. 
+        var NNNN = MASK_W; // All digits. 
         
-        NNNN[ 0x00E0 ] = 0x00; // 00E0    Clears the screen. 
-        NNNN[ 0x00EE ] = 0x01; // 00EE    Returns from a subroutine. 
-        N___[ 0x1000 ] = 0x02; // 1NNN    Jumps to address NNN. 
-        N___[ 0x2000 ] = 0x03; // 2NNN    Calls subroutine at NNN. 
-        N___[ 0x3000 ] = 0x04; // 3XNN    Skips the next instruction if VX equals NN. 
-        N___[ 0x4000 ] = 0x05; // 4XNN    Skips the next instruction if VX doesn't equal NN. 
-        N__N[ 0x5000 ] = 0x06; // 5XY0    Skips the next instruction if VX equals VY. 
-        N___[ 0x6000 ] = 0x07; // 6XNN    Sets VX to NN. 
-        N___[ 0x7000 ] = 0x08; // 7XNN    Adds NN to VX. 
-        N__N[ 0x8000 ] = 0x09; // 8XY0    Sets VX to the value of VY. 
-        N__N[ 0x8001 ] = 0x0A; // 8XY1    Sets VX to VX or VY. 
-        N__N[ 0x8002 ] = 0x0B; // 8XY2    Sets VX to VX and VY. 
-        N__N[ 0x8003 ] = 0x0C; // 8XY3    Sets VX to VX xor VY. 
-        N__N[ 0x8004 ] = 0x0D; // 8XY4    Adds VY to VX. VF is set to 1 when there's a carry, and to 0 when there isn't. 
-        N__N[ 0x8005 ] = 0x0E; // 8XY5    VY is subtracted from VX. VF is set to 0 when there's a borrow, and 1 when there isn't. 
-        N__N[ 0x8006 ] = 0x0F; // 8XY6    Shifts VX right by one. VF is set to the value of the least significant bit of VX before the shift. 
-        N__N[ 0x8007 ] = 0x10; // 8XY7    Sets VX to VY minus VX. VF is set to 0 when there's a borrow, and 1 when there isn't. 
-        N__N[ 0x800E ] = 0x11; // 8XYE    Shifts VX left by one. VF is set to the value of the most significant bit of VX before the shift. 
-        N__N[ 0x9000 ] = 0x12; // 9XY0    Skips the next instruction if VX doesn't equal VY. 
-        N___[ 0xA000 ] = 0x13; // ANNN    Sets I to the address NNN. 
-        N___[ 0xB000 ] = 0x14; // BNNN    Jumps to the address NNN plus V0. 
-        N___[ 0xC000 ] = 0x15; // CXNN    Sets VX to the result of a bitwise and operation on a random number and NN. 
-        N___[ 0xD000 ] = 0x16; // DXYN    Sprites stored in memory at location in index register (I), 8bits wide. Wraps around the screen. If when drawn, clears a pixel, register VF is set to 1 otherwise it is zero. All drawing is XOR drawing (i.e. it toggles the screen pixels). Sprites are drawn starting at position VX, VY. N is the number of 8bit rows that need to be drawn. If N is greater than 1, second line continues at position VX, VY+1, and so on. 
-        N_NN[ 0xE09E ] = 0x17; // EX9E    Skips the next instruction if the key stored in VX is pressed. 
-        N_NN[ 0xE0A1 ] = 0x18; // EXA1    Skips the next instruction if the key stored in VX isn't pressed. 
-        N_NN[ 0xF007 ] = 0x19; // FX07    Sets VX to the value of the delay timer. 
-        N_NN[ 0xF00A ] = 0x1A; // FX0A    A key press is awaited, and then stored in VX. 
-        N_NN[ 0xF015 ] = 0x1B; // FX15    Sets the delay timer to VX. 
-        N_NN[ 0xF018 ] = 0x1C; // FX18    Sets the sound timer to VX. 
-        N_NN[ 0xF01E ] = 0x1D; // FX1E    Adds VX to I. 
-        N_NN[ 0xF029 ] = 0x1E; // FX29    Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font. 
-        N_NN[ 0xF033 ] = 0x1F; // FX33    Stores the Binary-coded decimal representation of VX, with the most significant of three digits at the address in I, the middle digit at I plus 1, and the least significant digit at I plus 2. (In other words, take the decimal representation of VX, place the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.) 
-        N_NN[ 0xF055 ] = 0x20; // FX55    Stores V0 to VX in memory starting at address I. 
-        N_NN[ 0xF065 ] = 0x21; // FX65    Fills V0 to VX with values from memory starting at address I. 
+        var INSTRUCTION_NUMBER = [ 
+                0x00E0, // 00E0    Clears the screen. 
+                0x00EE, // 00EE    Returns from a subroutine. 
+                0x1000, // 1NNN    Jumps to address NNN. 
+                0x2000, // 2NNN    Calls subroutine at NNN. 
+                0x3000, // 3XNN    Skips the next instruction if VX equals NN. 
+                0x4000, // 4XNN    Skips the next instruction if VX doesn't equal NN. 
+                0x5000, // 5XY0    Skips the next instruction if VX equals VY. 
+                0x6000, // 6XNN    Sets VX to NN. 
+                0x7000, // 7XNN    Adds NN to VX. 
+                0x8000, // 8XY0    Sets VX to the value of VY. 
+                0x8001, // 8XY1    Sets VX to VX or VY. 
+                0x8002, // 8XY2    Sets VX to VX and VY. 
+                0x8003, // 8XY3    Sets VX to VX xor VY. 
+                0x8004, // 8XY4    Adds VY to VX. VF is set to 1 when there's a carry
+                0x8005, // 8XY5    VY is subtracted from VX. VF is set to 0 when there's a borrow
+                0x8006, // 8XY6    Shifts VX right by one. VF is set to the value of the least significant bit of VX before the shift. 
+                0x8007, // 8XY7    Sets VX to VY minus VX. VF is set to 0 when there's a borrow
+                0x800E, // 8XYE    Shifts VX left by one. VF is set to the value of the most significant bit of VX before the shift. 
+                0x9000, // 9XY0    Skips the next instruction if VX doesn't equal VY. 
+                0xA000, // ANNN    Sets I to the address NNN. 
+                0xB000, // BNNN    Jumps to the address NNN plus V0. 
+                0xC000, // CXNN    Sets VX to the result of a bitwise and operation on a random number and NN. 
+                0xD000, // DXYN    Sprites stored in memory at location in index register (I)
+                0xE09E, // EX9E    Skips the next instruction if the key stored in VX is pressed. 
+                0xE0A1, // EXA1    Skips the next instruction if the key stored in VX isn't pressed. 
+                0xF007, // FX07    Sets VX to the value of the delay timer. 
+                0xF00A, // FX0A    A key press is awaited
+                0xF015, // FX15    Sets the delay timer to VX. 
+                0xF018, // FX18    Sets the sound timer to VX. 
+                0xF01E, // FX1E    Adds VX to I. 
+                0xF029, // FX29    Sets I to the location of the sprite for the character in VX. Characters 0-F (in hexadecimal) are represented by a 4x5 font. 
+                0xF033, // FX33    Stores the Binary-coded decimal representation of VX
+                0xF055, // FX55    Stores V0 to VX in memory starting at address I. 
+                0xF065  // FX65    Fills V0 to VX with values from memory starting at address I. 
+        ]; 
         
-        var FIRST_FILTER = [ 
+        var INSTRUCTION_MASK = [ 
             NNNN, // 0x0 
             N___, // 0x1 
             N___, // 0x2 
