@@ -193,11 +193,27 @@ var Chip8 = ( function( guiInterface ){
             var target, result, operator, value_one, value_two; // Used to run the instruction. 
             var instruction; // Instruction identifier. 
             
-            // var base = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Base 64 decode. 
-            
             instruction = INSTRUCTION_NUMBER.indexOf( opcode & INSTRUCTION_MASK[ f_op ] ); 
             
+            if( BIT_MATCH( 'BAAAAA', instruction ) ) display.clear( ); 
             
+            if( BIT_MATCH( 'BAAQAA', instruction ) ) chip8Interface.setDrawFlag(  ); 
+            
+            /*
+            
+make = (function (instruction){
+var ll = [ '', 'A', 'AA', 'AAA', 'AAAA', 'AAAAA', 'AAAAAA' ]; 
+return ll[ Math.floor(instruction/6) ] + BASE64.charAt( 1 << ( instruction % 6 ) ) + ll[ 6 - Math.ceil(instruction/6) ] ;
+ }); 
+
+test = (function(hash){
+result=[]; 
+for(i=0;i<36;i++)
+  if( BIT_MATCH(hash,i) )
+    result.push(i);
+return result; 
+});
+            */
             
         } ); 
         
@@ -299,6 +315,13 @@ var Chip8 = ( function( guiInterface ){
             N_NN, // 0xE 
             N_NN  // 0xF 
         ]; 
+        
+        // Run code if bit is set in hash. 
+        var BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Base 64 decode. 
+        var B64_BITS = 0x06; 
+        var BIT_MATCH = ( function( hash, instruction ){ 
+            return ( BASE64.indexOf( hash.charAt( Math.floor( instruction / B64_BITS ) ) ) & ( 1 << ( instruction % B64_BITS ) ) ) != 0; // Check if bit is set. 
+        } ); 
         
         // Current ROM loaded. 
         var romdata = [  ]; 
