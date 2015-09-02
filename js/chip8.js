@@ -184,36 +184,73 @@ var Chip8 = ( function( guiInterface ){
         this.cycle = ( function(  ){ 
             
             var opcode = byteToWord( memory[ pc_register++ ], memory[ pc_register++ ] ); // Gets current instruction. 
-            var f_op = ( opcode & MASK_F ) >> R0xC_BITS; // Gets first hexadecimal digit. 
-            var x_op = ( opcode & MASK_S ) >> R0x8_BITS; // Gets second hexadecimal digit. 
-            var y_op = ( opcode & MASK_T ) >> R0x4_BITS; // Gets third hexadecimal digit. 
+            var f_op = ( opcode & MASK_F ) >> R0xC_BITS; // Get first hexadecimal digit. 
+            var x_op = ( opcode & MASK_S ) >> R0x8_BITS; // Get second hexadecimal digit. 
+            var y_op = ( opcode & MASK_T ) >> R0x4_BITS; // Get third hexadecimal digit. 
             var value_op = ( opcode & MASK_V ); // Gets lower byte of "opcode". 
             var address_op = ( opcode & MASK_A ); // Get a 12-bit value used as the memory address. 
             
-            var target, result, operator, value_one, value_two; // Used to run the instruction. 
+            var result, value_one, value_two, condition; // Used to run the instruction. 
             var instruction; // Instruction identifier. 
             
             instruction = INSTRUCTION_NUMBER.indexOf( opcode & INSTRUCTION_MASK[ f_op ] ); 
             
-            if( BIT_MATCH( 'BAAAAA', instruction ) ) display.clear( ); 
-            
-            if( BIT_MATCH( 'BAAQAA', instruction ) ) chip8Interface.setDrawFlag(  ); 
             
             /*
-            
-make = (function (instruction){
-var ll = [ '', 'A', 'AA', 'AAA', 'AAAA', 'AAAAA', 'AAAAAA' ]; 
-return ll[ Math.floor(instruction/6) ] + BASE64.charAt( 1 << ( instruction % 6 ) ) + ll[ 6 - Math.ceil(instruction/6) ] ;
- }); 
-
-test = (function(hash){
-result=[]; 
-for(i=0;i<36;i++)
-  if( BIT_MATCH(hash,i) )
-    result.push(i);
-return result; 
-});
+            TODO: 
+            10 = 8XY1    Sets VX to VX or VY. 
+            OR Vx, Vy
+            registers[ x ] |= registers[ y ]; 
+            break;  
             */
+            
+            
+            if( BIT_MATCH( '' /* 00 */, instruction ) ) display.clear( ); // Display clear. 
+            
+            
+            if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) value_one = sp_register; // SP as value one. 
+            if( BIT_MATCH( '' /* 04, 05, 06, 08 */, instruction ) ) value_one = registers[ x_op ]; // VX as value one. 
+            
+            
+            if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) value_two = 1; // Use to increase or decrease a value. 
+            if( BIT_MATCH( '' /* 06 */, instruction ) ) value_two = registers[ y_op ]; // VY as value two. 
+            if( BIT_MATCH( '' /* 04, 05, 08 */, instruction ) ) value_two = value_op; // Value in opcode as value two. 
+            
+            
+            if( BIT_MATCH( '' /* 03, 08 */, instruction ) ) result = value_one + value_two; // Addition. 
+            if( BIT_MATCH( '' /* 01 */, instruction ) ) result = value_one - value_two; // Subtraction. 
+            
+            
+            if( BIT_MATCH( '' /* 04, 06 */, instruction ) ) condition = ( value_one == value_two ); 
+            if( BIT_MATCH( '' /* 05 */, instruction ) ) condition = ( value_one != value_two ); 
+            
+            
+            if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) sp_register = result; // SP as target. 
+            
+            
+            if( BIT_MATCH( '' /* 09 */, instruction ) ) result = registers[ y_op ]; // Get VY. 
+            
+            if( BIT_MATCH( '' /* 07 */, instruction ) ) result = value_op; // Get value in opcode. 
+            
+            if( BIT_MATCH( '' /* 01 */, instruction ) ) result = stack[ sp_register ]; // Get stack value. 
+            
+            if( BIT_MATCH( '' /* 03 */, instruction ) ) result = pc_register; // Get PC. 
+            
+            if( BIT_MATCH( '' /* 03 */, instruction ) ) stack[ sp_register ] = result; // Stack as target. 
+            
+            if( BIT_MATCH( '' /* 02, 03 */, instruction ) ) result = address_op; // Get address in opcode. 
+            
+            
+            
+            
+            if( BIT_MATCH( '' /* 07, 08, 09 */, instruction ) ) registers[ x_op ] = result; // VX as target. 
+            if( BIT_MATCH( '' /* 01, 02, 03 */, instruction ) ) pc_register = result; // PC as target. 
+            
+            if( BIT_MATCH( '' /* 04, 05, 06 */, instruction ) ) pc_register = ( condition ? pc_register + INSTRUCTION_SIZE : pc_register ); // Conditional skip.
+            
+            if( BIT_MATCH( '' /* 00, 22 */, instruction ) ) chip8Interface.setDrawFlag(  ); // Set draw flag. 
+            
+            // if( BIT_MATCH( '' /*  */, instruction ) ) 
             
         } ); 
         
@@ -271,7 +308,7 @@ return result;
                 0x6000, // 6XNN    Sets VX to NN. 
                 0x7000, // 7XNN    Adds NN to VX. 
                 0x8000, // 8XY0    Sets VX to the value of VY. 
-                0x8001, // 8XY1    Sets VX to VX or VY. 
+                0x8001, // 8XY1    Sets VX to VX or VY. * 10
                 0x8002, // 8XY2    Sets VX to VX and VY. 
                 0x8003, // 8XY3    Sets VX to VX xor VY. 
                 0x8004, // 8XY4    Adds VY to VX. VF is set to 1 when there's a carry
@@ -315,6 +352,8 @@ return result;
             N_NN, // 0xE 
             N_NN  // 0xF 
         ]; 
+        
+        var INSTRUCTION_SIZE = 0x02; // Two byte for each instruction. 
         
         // Run code if bit is set in hash. 
         var BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Base 64 decode. 
