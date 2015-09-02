@@ -1,0 +1,37 @@
+
+
+
+// Create CPU HASH to cycle. 
+
+var BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Base 64 decode. 
+var B64_BITS = 0x06; 
+var BIT_MATCH = ( function( hash, instruction ){ 
+    return ( BASE64.indexOf( hash.charAt( Math.floor( instruction / B64_BITS ) ) ) & ( 1 << ( instruction % B64_BITS ) ) ) != 0; // Check if bit is set. 
+} ); 
+
+makeHash = ( function( inst_list, length ){ 
+
+    var count = length, result = ''; 
+    while( count-- > 0 ) 
+        result += 'A'; 
+    result = result.split( '' ); 
+    for( count = 0; count < inst_list.length; count++) 
+    {
+        var instruction = inst_list[ count ]; 
+        var code = BASE64.indexOf( result[ Math.floor( instruction / 6 ) ] ); 
+        result[ Math.floor( instruction / 6 ) ] = BASE64.charAt( code | ( 1 << ( instruction % 6 ) ) ); 
+    }
+    
+    return result.join( '' ); 
+    
+} ); 
+
+testHash = ( function( hash ){ 
+    
+    var result=[]; 
+    for( var count=0; count<hash.length * B64_BITS; count++ ) 
+        if( BIT_MATCH( hash, count ) ) 
+            result.push( count );
+    return result; 
+    
+} ); 
