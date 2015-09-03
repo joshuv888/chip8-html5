@@ -197,11 +197,86 @@ var Chip8 = ( function( guiInterface ){
             
             
             /*
-            TODO: 
-            10 = 8XY1    Sets VX to VX or VY. 
-            OR Vx, Vy
-            registers[ x ] |= registers[ y ]; 
-            break;  
+            
+                ==================================================
+                18
+                case 0x9000: // SNE Vx, Vy 
+                    programCounter += ( registers[ x ] != registers[ y ] )?2:0; 
+                ==================================================
+                case 0xA000: // LD I, addr
+                    address = addr; 
+                ==================================================
+                case 0xB000: // JP V0, addr
+                    programCounter = addr + registers[ 0 ]; 
+                ==================================================
+                case 0xC000: // RND Vx, byte
+                    registers[ x ] = Math.floor( Math.random(    ) * 0xFF ) & value; 
+                ==================================================
+                case 0xD000: // DRW Vx, Vy, Count
+                    registers[ 0xF ] = +( display.drawSprite( registers[ x ], registers[ y ], memory.subarray( address, address + ( opCode & 0x000F ) ) ) ); 
+                    chip8.setDrawFlag(    ); 
+                ==================================================
+                case 0xE000: // 0xE000
+                    switch( opCode & 0x00FF ) 
+                    { 
+                        // 0xEX9E
+                        case 0x009E: // SKP Vx
+                            programCounter += ( chip8.keyPressed( registers[ x ] ) )?2:0; 
+                ==================================================
+                        // 0xEXA1
+                        case 0x00A1: // SKNP Vx
+                            programCounter += ( !( chip8.keyPressed( registers[ x ] ) ) )?2:0; 
+                
+                ==================================================
+                    }
+                
+                ==================================================
+                case 0xF000: // 0xF0000
+                    switch( opCode & 0x00FF )
+                    { 
+                        // 0xFX07
+                        case 0x0007: // LD Vx, DT
+                            registers[ x ] = delayTimer; 
+                ==================================================
+                        // 0xFX0A
+                        case 0x000A: // LD Vx, K
+                            chip8.waitKey( function( key ){ 
+                                registers[ x ] = key; 
+                            } ); 
+                ==================================================
+                        // 0xFX15
+                        case 0x0015: // LD DT, Vx
+                            delayTimer = registers[ x ]; 
+                ==================================================
+                        // 0xFX18
+                        case 0x0018: // LD ST, Vx
+                            soundTimer = registers[ x ]; 
+                ==================================================
+                        // 0xFX1E
+                        case 0x001E: // ADD I, Vx
+                            address += registers[ x ]; 
+                ==================================================
+                        // 0xFX29
+                        case 0x0029: // LD F, Vx
+                            address = registers[ x ] * ROWS_CARACTER; 
+                ==================================================
+                        // 0xFX33
+                        case 0x0033: // LD B, Vx
+                            for( var localCount = 0; localCount < 3; localCount++ ) 
+                                memory[ address + localCount ] = Math.floor( registers[ x ] / ( Math.pow( 10, 2 - localCount ) ) % 10 ); 
+                ==================================================
+                        // 0xFX55
+                        case 0x0055: // LD [I], Vx
+                            for( var localCount = 0; localCount <= x; localCount++ ) 
+                                memory[ address + localCount ] = registers[ localCount ]; 
+                ==================================================
+                        // 0xFX65
+                        case 0x0065: // LD Vx, [I]
+                            for( var localCount = 0; localCount <= x; localCount++ ) 
+                                registers[ localCount ] = memory[ address + localCount ]; 
+                ==================================================
+                    } 
+            
             */
             
             
@@ -209,16 +284,25 @@ var Chip8 = ( function( guiInterface ){
             
             
             if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) value_one = sp_register; // SP as value one. 
-            if( BIT_MATCH( '' /* 04, 05, 06, 08 */, instruction ) ) value_one = registers[ x_op ]; // VX as value one. 
+            if( BIT_MATCH( '' /* 04, 05, 06, 08, 10, 11, 12, 13, 14, 15, 16, 17 */, instruction ) ) value_one = registers[ x_op ]; // VX as value one. 
             
             
-            if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) value_two = 1; // Use to increase or decrease a value. 
-            if( BIT_MATCH( '' /* 06 */, instruction ) ) value_two = registers[ y_op ]; // VY as value two. 
+            if( BIT_MATCH( '' /* 01, 03, 15, 17 */, instruction ) ) value_two = 1; // Use to increase or decrease a value. 
             if( BIT_MATCH( '' /* 04, 05, 08 */, instruction ) ) value_two = value_op; // Value in opcode as value two. 
+            if( BIT_MATCH( '' /* 06, 10, 11, 12, 13, 14, 16 */, instruction ) ) value_two = registers[ y_op ]; // VY as value two. 
             
             
-            if( BIT_MATCH( '' /* 03, 08 */, instruction ) ) result = value_one + value_two; // Addition. 
-            if( BIT_MATCH( '' /* 01 */, instruction ) ) result = value_one - value_two; // Subtraction. 
+            if( BIT_MATCH( '' /* 03, 08, 13 */, instruction ) ) result = value_one + value_two; // Addition. 
+            if( BIT_MATCH( '' /* 01, 14, 16 */, instruction ) ) result = value_one - value_two; // Subtraction. 
+            
+            if( BIT_MATCH( '' /* 10 */, instruction ) ) result = value_one | value_two; // Bitwise OR. 
+            if( BIT_MATCH( '' /* 11 */, instruction ) ) result = value_one & value_two; // Bitwise AND. 
+            if( BIT_MATCH( '' /* 12 */, instruction ) ) result = value_one ^ value_two; // Bitwise XOR. 
+            if( BIT_MATCH( '' /* 15 */, instruction ) ) result = ( value_one >> value_two ) | ( ( value_one & 1 ) << BITS_BYTE ) ; // Shift right. 
+            if( BIT_MATCH( '' /* 17 */, instruction ) ) result = value_one << value_two; // Shift left. 
+            
+            if( BIT_MATCH( '' /* 16 */, instruction ) ) result = -result ; // Invert result. 
+            
             
             
             if( BIT_MATCH( '' /* 04, 06 */, instruction ) ) condition = ( value_one == value_two ); 
@@ -243,12 +327,14 @@ var Chip8 = ( function( guiInterface ){
             
             
             
-            if( BIT_MATCH( '' /* 07, 08, 09 */, instruction ) ) registers[ x_op ] = result; // VX as target. 
+            if( BIT_MATCH( '' /* 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17 */, instruction ) ) registers[ x_op ] = result; // VX as target. 
             if( BIT_MATCH( '' /* 01, 02, 03 */, instruction ) ) pc_register = result; // PC as target. 
             
             if( BIT_MATCH( '' /* 04, 05, 06 */, instruction ) ) pc_register = ( condition ? pc_register + INSTRUCTION_SIZE : pc_register ); // Conditional skip.
             
             if( BIT_MATCH( '' /* 00, 22 */, instruction ) ) chip8Interface.setDrawFlag(  ); // Set draw flag. 
+            if( BIT_MATCH( '' /* 13, 15, 17 */, instruction ) ) registers[ FLAG_REGISTER ] = +( result > MASK_BYTE ); // Carry flag. 
+            if( BIT_MATCH( '' /* 14, 16 */, instruction ) ) registers[ FLAG_REGISTER ] = +( result >= 0 ); // Signed flag. 
             
             // if( BIT_MATCH( '' /*  */, instruction ) ) 
             
@@ -308,13 +394,13 @@ var Chip8 = ( function( guiInterface ){
                 0x6000, // 6XNN    Sets VX to NN. 
                 0x7000, // 7XNN    Adds NN to VX. 
                 0x8000, // 8XY0    Sets VX to the value of VY. 
-                0x8001, // 8XY1    Sets VX to VX or VY. * 10
+                0x8001, // 8XY1    Sets VX to VX or VY.
                 0x8002, // 8XY2    Sets VX to VX and VY. 
                 0x8003, // 8XY3    Sets VX to VX xor VY. 
                 0x8004, // 8XY4    Adds VY to VX. VF is set to 1 when there's a carry
-                0x8005, // 8XY5    VY is subtracted from VX. VF is set to 0 when there's a borrow
+                0x8005, // 8XY5    VY is subtracted from VX. VF is set to 0 when there's a borrow. 
                 0x8006, // 8XY6    Shifts VX right by one. VF is set to the value of the least significant bit of VX before the shift. 
-                0x8007, // 8XY7    Sets VX to VY minus VX. VF is set to 0 when there's a borrow
+                0x8007, // 8XY7    Sets VX to VY minus VX. VF is set to 0 when there's a borrow. * 16
                 0x800E, // 8XYE    Shifts VX left by one. VF is set to the value of the most significant bit of VX before the shift. 
                 0x9000, // 9XY0    Skips the next instruction if VX doesn't equal VY. 
                 0xA000, // ANNN    Sets I to the address NNN. 
@@ -353,7 +439,8 @@ var Chip8 = ( function( guiInterface ){
             N_NN  // 0xF 
         ]; 
         
-        var INSTRUCTION_SIZE = 0x02; // Two byte for each instruction. 
+        var INSTRUCTION_SIZE = 0x02; // Two byte for e ach instruction. 
+        var FLAG_REGISTER = 0xF; // VF is flag of chip8. 
         
         // Run code if bit is set in hash. 
         var BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'; // Base 64 decode. 
