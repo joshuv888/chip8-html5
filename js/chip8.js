@@ -199,19 +199,7 @@ var Chip8 = ( function( guiInterface ){
             /*
             
                 ==================================================
-                18
-                case 0x9000: // SNE Vx, Vy 
-                    programCounter += ( registers[ x ] != registers[ y ] )?2:0; 
-                ==================================================
-                case 0xA000: // LD I, addr
-                    address = addr; 
-                ==================================================
-                case 0xB000: // JP V0, addr
-                    programCounter = addr + registers[ 0 ]; 
-                ==================================================
-                case 0xC000: // RND Vx, byte
-                    registers[ x ] = Math.floor( Math.random(    ) * 0xFF ) & value; 
-                ==================================================
+                22
                 case 0xD000: // DRW Vx, Vy, Count
                     registers[ 0xF ] = +( display.drawSprite( registers[ x ], registers[ y ], memory.subarray( address, address + ( opCode & 0x000F ) ) ) ); 
                     chip8.setDrawFlag(    ); 
@@ -284,19 +272,21 @@ var Chip8 = ( function( guiInterface ){
             
             
             if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) value_one = sp_register; // SP as value one. 
-            if( BIT_MATCH( '' /* 04, 05, 06, 08, 10, 11, 12, 13, 14, 15, 16, 17 */, instruction ) ) value_one = registers[ x_op ]; // VX as value one. 
+            if( BIT_MATCH( '' /* 04, 05, 06, 08, 10, 11, 12, 13, 14, 15, 16, 17, 18 */, instruction ) ) value_one = registers[ x_op ]; // VX as value one. 
+            if( BIT_MATCH( '' /* 20 */, instruction ) ) value_one = registers[ 0 ]; // V0 as value one. 
+            if( BIT_MATCH( '' /* 21 */, instruction ) ) value_one = Math.floor( Math.random(  ) * MASK_BYTE ); // A ramdom number as value one. 
             
             
             if( BIT_MATCH( '' /* 01, 03, 15, 17 */, instruction ) ) value_two = 1; // Use to increase or decrease a value. 
-            if( BIT_MATCH( '' /* 04, 05, 08 */, instruction ) ) value_two = value_op; // Value in opcode as value two. 
-            if( BIT_MATCH( '' /* 06, 10, 11, 12, 13, 14, 16 */, instruction ) ) value_two = registers[ y_op ]; // VY as value two. 
+            if( BIT_MATCH( '' /* 04, 05, 08, 21 */, instruction ) ) value_two = value_op; // Value in opcode as value two. 
+            if( BIT_MATCH( '' /* 06, 10, 11, 12, 13, 14, 16, 18 */, instruction ) ) value_two = registers[ y_op ]; // VY as value two. 
+            if( BIT_MATCH( '' /* 20 */, instruction ) ) value_two = address_op; // Address in opcode as value two. 
             
-            
-            if( BIT_MATCH( '' /* 03, 08, 13 */, instruction ) ) result = value_one + value_two; // Addition. 
+            if( BIT_MATCH( '' /* 03, 08, 13, 20 */, instruction ) ) result = value_one + value_two; // Addition. 
             if( BIT_MATCH( '' /* 01, 14, 16 */, instruction ) ) result = value_one - value_two; // Subtraction. 
             
             if( BIT_MATCH( '' /* 10 */, instruction ) ) result = value_one | value_two; // Bitwise OR. 
-            if( BIT_MATCH( '' /* 11 */, instruction ) ) result = value_one & value_two; // Bitwise AND. 
+            if( BIT_MATCH( '' /* 11, 21 */, instruction ) ) result = value_one & value_two; // Bitwise AND. 
             if( BIT_MATCH( '' /* 12 */, instruction ) ) result = value_one ^ value_two; // Bitwise XOR. 
             if( BIT_MATCH( '' /* 15 */, instruction ) ) result = ( value_one >> value_two ) | ( ( value_one & 1 ) << BITS_BYTE ) ; // Shift right. 
             if( BIT_MATCH( '' /* 17 */, instruction ) ) result = value_one << value_two; // Shift left. 
@@ -306,31 +296,27 @@ var Chip8 = ( function( guiInterface ){
             
             
             if( BIT_MATCH( '' /* 04, 06 */, instruction ) ) condition = ( value_one == value_two ); 
-            if( BIT_MATCH( '' /* 05 */, instruction ) ) condition = ( value_one != value_two ); 
+            if( BIT_MATCH( '' /* 05, 18 */, instruction ) ) condition = ( value_one != value_two ); 
             
             
             if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) sp_register = result; // SP as target. 
             
             
             if( BIT_MATCH( '' /* 09 */, instruction ) ) result = registers[ y_op ]; // Get VY. 
-            
             if( BIT_MATCH( '' /* 07 */, instruction ) ) result = value_op; // Get value in opcode. 
-            
             if( BIT_MATCH( '' /* 01 */, instruction ) ) result = stack[ sp_register ]; // Get stack value. 
-            
             if( BIT_MATCH( '' /* 03 */, instruction ) ) result = pc_register; // Get PC. 
-            
             if( BIT_MATCH( '' /* 03 */, instruction ) ) stack[ sp_register ] = result; // Stack as target. 
-            
-            if( BIT_MATCH( '' /* 02, 03 */, instruction ) ) result = address_op; // Get address in opcode. 
-            
+            if( BIT_MATCH( '' /* 02, 03, 19 */, instruction ) ) result = address_op; // Get address in opcode. 
             
             
             
-            if( BIT_MATCH( '' /* 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17 */, instruction ) ) registers[ x_op ] = result; // VX as target. 
-            if( BIT_MATCH( '' /* 01, 02, 03 */, instruction ) ) pc_register = result; // PC as target. 
             
-            if( BIT_MATCH( '' /* 04, 05, 06 */, instruction ) ) pc_register = ( condition ? pc_register + INSTRUCTION_SIZE : pc_register ); // Conditional skip.
+            if( BIT_MATCH( '' /* 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 21 */, instruction ) ) registers[ x_op ] = result; // VX as target. 
+            if( BIT_MATCH( '' /* 01, 02, 03, 20 */, instruction ) ) pc_register = result; // PC as target. 
+            if( BIT_MATCH( '' /* 19 */, instruction ) ) i_regsiter = result; // I register as target. 
+            
+            if( BIT_MATCH( '' /* 04, 05, 06, 18 */, instruction ) ) pc_register = ( condition ? pc_register + INSTRUCTION_SIZE : pc_register ); // Conditional skip.
             
             if( BIT_MATCH( '' /* 00, 22 */, instruction ) ) chip8Interface.setDrawFlag(  ); // Set draw flag. 
             if( BIT_MATCH( '' /* 13, 15, 17 */, instruction ) ) registers[ FLAG_REGISTER ] = +( result > MASK_BYTE ); // Carry flag. 
