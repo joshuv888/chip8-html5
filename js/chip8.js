@@ -199,33 +199,7 @@ var Chip8 = ( function( guiInterface ){
             /*
             
                 ==================================================
-                22
-                case 0xD000: // DRW Vx, Vy, Count
-                    registers[ 0xF ] = +( display.drawSprite( registers[ x ], registers[ y ], memory.subarray( address, address + ( opCode & 0x000F ) ) ) ); 
-                    chip8.setDrawFlag(    ); 
-                ==================================================
-                case 0xE000: // 0xE000
-                    switch( opCode & 0x00FF ) 
-                    { 
-                        // 0xEX9E
-                        case 0x009E: // SKP Vx
-                            programCounter += ( chip8.keyPressed( registers[ x ] ) )?2:0; 
-                ==================================================
-                        // 0xEXA1
-                        case 0x00A1: // SKNP Vx
-                            programCounter += ( !( chip8.keyPressed( registers[ x ] ) ) )?2:0; 
-                
-                ==================================================
-                    }
-                
-                ==================================================
-                case 0xF000: // 0xF0000
-                    switch( opCode & 0x00FF )
-                    { 
-                        // 0xFX07
-                        case 0x0007: // LD Vx, DT
-                            registers[ x ] = delayTimer; 
-                ==================================================
+                26
                         // 0xFX0A
                         case 0x000A: // LD Vx, K
                             chip8.waitKey( function( key ){ 
@@ -269,6 +243,7 @@ var Chip8 = ( function( guiInterface ){
             
             
             if( BIT_MATCH( '' /* 00 */, instruction ) ) display.clear( ); // Display clear. 
+            if( BIT_MATCH( '' /* 22 */, instruction ) ) registers[ FLAG_REGISTER ] = +( display.draw( memory.subarray( i_register, i_register + MASK_L, registers[ x_op ], registers[ y_op ] ) ) ); // Draw sprite in screen. 
             
             
             if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) value_one = sp_register; // SP as value one. 
@@ -295,13 +270,16 @@ var Chip8 = ( function( guiInterface ){
             
             
             
-            if( BIT_MATCH( '' /* 04, 06 */, instruction ) ) condition = ( value_one == value_two ); 
-            if( BIT_MATCH( '' /* 05, 18 */, instruction ) ) condition = ( value_one != value_two ); 
+            if( BIT_MATCH( '' /* 04, 06 */, instruction ) ) condition = ( value_one == value_two ); // Equal. 
+            if( BIT_MATCH( '' /* 05, 18 */, instruction ) ) condition = ( value_one != value_two ); // Different. 
+            if( BIT_MATCH( '' /* 23 */, instruction ) ) condition =  chip8Interface.isKeyPressed( registers[ x_op ] ); // If key of number in VX is pressed. 
+            if( BIT_MATCH( '' /* 24 */, instruction ) ) condition = !chip8Interface.isKeyPressed( registers[ x_op ] ); // If key of number in VX isn't pressed. 
             
             
             if( BIT_MATCH( '' /* 01, 03 */, instruction ) ) sp_register = result; // SP as target. 
             
             
+            if( BIT_MATCH( '' /* 25 */, instruction ) ) result = delayTimer; // Get delay timer. 
             if( BIT_MATCH( '' /* 09 */, instruction ) ) result = registers[ y_op ]; // Get VY. 
             if( BIT_MATCH( '' /* 07 */, instruction ) ) result = value_op; // Get value in opcode. 
             if( BIT_MATCH( '' /* 01 */, instruction ) ) result = stack[ sp_register ]; // Get stack value. 
@@ -312,11 +290,11 @@ var Chip8 = ( function( guiInterface ){
             
             
             
-            if( BIT_MATCH( '' /* 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 21 */, instruction ) ) registers[ x_op ] = result; // VX as target. 
+            if( BIT_MATCH( '' /* 07, 08, 09, 10, 11, 12, 13, 14, 15, 16, 17, 21, 25 */, instruction ) ) registers[ x_op ] = result; // VX as target. 
             if( BIT_MATCH( '' /* 01, 02, 03, 20 */, instruction ) ) pc_register = result; // PC as target. 
-            if( BIT_MATCH( '' /* 19 */, instruction ) ) i_regsiter = result; // I register as target. 
+            if( BIT_MATCH( '' /* 19 */, instruction ) ) i_register = result; // I register as target. 
             
-            if( BIT_MATCH( '' /* 04, 05, 06, 18 */, instruction ) ) pc_register = ( condition ? pc_register + INSTRUCTION_SIZE : pc_register ); // Conditional skip.
+            if( BIT_MATCH( '' /* 04, 05, 06, 18, 23, 24 */, instruction ) ) pc_register = ( condition ? pc_register + INSTRUCTION_SIZE : pc_register ); // Conditional skip. 
             
             if( BIT_MATCH( '' /* 00, 22 */, instruction ) ) chip8Interface.setDrawFlag(  ); // Set draw flag. 
             if( BIT_MATCH( '' /* 13, 15, 17 */, instruction ) ) registers[ FLAG_REGISTER ] = +( result > MASK_BYTE ); // Carry flag. 
